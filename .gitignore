@@ -11,7 +11,7 @@
 # Zelf toegevoegd #
 /bin
 .checkstyle
-/.settings
+AIPracticum/.settings
 .project
 .classpath
 .metadata

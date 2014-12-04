@@ -4,19 +4,32 @@ import java.io.*;
 import java.util.*;
 
 public class NaiveBayesianTextClassifier {
-	public static Map<String, Integer> fWords = new HashMap<String, Integer>();
-	public static Map<String, Integer> mWords = new HashMap<String, Integer>();
-	public static Map<String, Double> mProb;
-	public static Map<String, Double> fProb;
+	public Map<String, Integer> fWords = new HashMap<String, Integer>();
+	public Map<String, Integer> mWords = new HashMap<String, Integer>();
+	public Map<String, Double> mProb;
+	public Map<String, Double> fProb;
+	public int mAmountWords;
+	public int fAmountWords;
+	public int diffWords;
+	public int k = 1;
 
 	public NaiveBayesianTextClassifier(){
 		final File mFolder = new File("C:/Users/reinard/Documents/TI/Jaar 2/Module 6/blogstest/M/");
 		listFilesForFolder("M", mFolder);
 		final File fFolder = new File("C:/Users/reinard/Documents/TI/Jaar 2/Module 6/blogstest/F/");
 		listFilesForFolder("F", fFolder);
-		mProb = makeProb(mWords);
-		fProb = makeProb(fWords);
+		addWords();
+		countWords();
+		makeProb();
 	}
+	
+//	public Map<String, Integer> getFWords(){
+//		return fWords;
+//	}
+//	
+//	public Map<String, Integer> getMWords(){
+//		return mWords;
+//	}
 	
 	 String listFilesForFolder(String gender, final File folder) {
 	    for (final File fileEntry : folder.listFiles()) {
@@ -30,8 +43,28 @@ public class NaiveBayesianTextClassifier {
 	    }
 	    return "";
 	}
+	 
+		String readFile(String gender, String fileName){
+			 String everything = "";
+			 try(BufferedReader br = new BufferedReader(new FileReader("C:/Users/reinard/Documents/TI/Jaar 2/Module 6/blogstest/" + gender + "/"  + fileName))) {
+			        StringBuilder sb = new StringBuilder();
+			        String line = br.readLine();
+
+			        while (line != null) {
+			            sb.append(line);
+			            sb.append(System.lineSeparator());
+			            line = br.readLine();
+			        }
+			        everything = sb.toString();
+			    } catch (FileNotFoundException e) {
+					e.printStackTrace();
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+			    return everything;
+		}
 	
-	 void addList(Map<String, Integer> inputMap, String input){
+	 public void addList(Map<String, Integer> inputMap, String input){
 		String[] f1Array = new Tokenizer().makeToken(input);
 		for(int i = 0; i < f1Array.length; i++){
 			if(!inputMap.containsKey(f1Array[i])){
@@ -41,58 +74,68 @@ public class NaiveBayesianTextClassifier {
 			}
 		}
 	}
-	
-	
-	 Map<String, Double> makeProb(Map<String, Integer> input){
-		int value = 0;
-		Map<String, Double> returnMap = new HashMap<String, Double>();
-		for(String key : input.keySet()){
-			value += input.get(key);
+	 
+	void addWords(){
+		for(String key : mWords.keySet()){
+			if(!fWords.containsKey(key)){
+				fWords.put(key, 0);
+			}
 		}
-		for(String key : input.keySet()){
-			returnMap.put(key, (double)input.get(key)/(double)value );
+		for(String key : fWords.keySet()){
+			if(!mWords.containsKey(key)){
+				mWords.put(key, 0);
+			}
 		}
 		
-		return returnMap;
 	}
 	
-	String readFile(String gender, String fileName){
-		 String everything = "";
-		 try(BufferedReader br = new BufferedReader(new FileReader("C:/Users/reinard/Documents/TI/Jaar 2/Module 6/blogstest/" + gender + "/"  + fileName))) {
-		        StringBuilder sb = new StringBuilder();
-		        String line = br.readLine();
-
-		        while (line != null) {
-		            sb.append(line);
-		            sb.append(System.lineSeparator());
-		            line = br.readLine();
-		        }
-		        everything = sb.toString();
-		    } catch (FileNotFoundException e) {
-				e.printStackTrace();
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
-		    return everything;
+	void countWords(){
+		for(String key : mWords.keySet()){
+			mAmountWords += mWords.get(key);
+		}
+		for(String key : fWords.keySet()){
+			fAmountWords += fWords.get(key);
+		}
+		if(mWords.keySet().size() != fWords.keySet().size()){
+			System.out.println("Something went wrong");
+		} else {
+			diffWords = mWords.keySet().size();
+		}
 	}
+	
+	
+	 void makeProb(){
+		Map<String, Double> mreturnMap = new HashMap<String, Double>();
+		for(String key : mWords.keySet()){
+			mreturnMap.put(key, ((double)mWords.get(key) + k)/(mAmountWords + k * diffWords));
+			mProb = mreturnMap;
+		}
+		Map<String, Double> freturnMap = new HashMap<String, Double>();
+		for(String key : fWords.keySet()){
+			freturnMap.put(key, ((double)fWords.get(key) + k)/(fAmountWords + k * diffWords));
+			fProb = freturnMap;
+		}
+	 }
+	
 	  String run(String input){
 		String[] array = new Tokenizer().makeToken(input);
 		double mChance = 0;
 		double fChance = 0;
 		for(int i = 0; i < array.length; i++){
 			if(mProb.keySet().contains(array[i])){
-				mChance = mChance + (Math.log(mProb.get(array[i]))/Math.log(2));
+			mChance = mChance + (Math.log(mProb.get(array[i])/(mProb.get(array[i]) + fProb.get(array[i])) / Math.log(2)));
 			} else {
-				mChance = mChance + Math.log(1/mWords.size())/Math.log(2);
+				mChance = mChance + (Math.log(k)/(mAmountWords + k * diffWords)) / Math.log(2);
 			}
 			if(fProb.keySet().contains(array[i])) {
-				fChance = fChance + Math.log(fProb.get(array[i])/Math.log(2));
+			fChance = fChance + Math.log(fProb.get(array[i])/(mProb.get(array[i]) + fProb.get(array[i]))/Math.log(2));
 			} else {
-				fChance = fChance + Math.log(1/fWords.size())/Math.log(2);
+				fChance = fChance + (Math.log(k)/(fAmountWords + k * diffWords)) / Math.log(2);
 			}
+			
 		}
-		//System.out.println(mChance);
-		//System.out.println(fChance);
+//		System.out.println(mChance);
+//		System.out.println(fChance);
 
 		if(mChance > fChance) {
 			return "MALE";
@@ -117,14 +160,14 @@ public class NaiveBayesianTextClassifier {
 			    }
 			    return "";
 			}
-			
-	public static void main(String[] args) {
-		
-		
-		NaiveBayesianTextClassifier t = new NaiveBayesianTextClassifier();
-		final File mFolder = new File("C:/Users/reinard/Documents/TI/Jaar 2/Module 6/blogstest/M");
-		t.listFilesForFolder2("M", mFolder);
-		final File fFolder = new File("C:/Users/reinard/Documents/TI/Jaar 2/Module 6/blogstest/F/");
-		t.listFilesForFolder2("F", fFolder);
-		}
+//			
+//	public static void main(String[] args) {
+//		
+//		
+//		NaiveBayesianTextClassifier t = new NaiveBayesianTextClassifier();
+//		final File mFolder = new File("C:/Users/reinard/Documents/TI/Jaar 2/Module 6/blogstest/M");
+//		t.listFilesForFolder2("M", mFolder);
+//		final File fFolder = new File("C:/Users/reinard/Documents/TI/Jaar 2/Module 6/blogstest/F/");
+//		t.listFilesForFolder2("F", fFolder);
+//	}
 }

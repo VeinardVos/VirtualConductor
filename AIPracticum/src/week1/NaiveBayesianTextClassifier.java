@@ -12,11 +12,13 @@ public class NaiveBayesianTextClassifier {
 	public int fAmountWords;
 	public int diffWords;
 	public int k = 1;
+	public double correct = 0;
+	public double notCorrect = 0;
 
 	public NaiveBayesianTextClassifier(){
-		final File mFolder = new File("C:/Users/reinard/Documents/TI/Jaar 2/Module 6/blogstest/M/");
+		final File mFolder = new File("C:/Users/reinard/Documents/TI/Jaar 2/Module 6/blogstrain/M/");
 		listFilesForFolder("M", mFolder);
-		final File fFolder = new File("C:/Users/reinard/Documents/TI/Jaar 2/Module 6/blogstest/F/");
+		final File fFolder = new File("C:/Users/reinard/Documents/TI/Jaar 2/Module 6/blogstrain/F/");
 		listFilesForFolder("F", fFolder);
 		addWords();
 		countWords();
@@ -36,7 +38,7 @@ public class NaiveBayesianTextClassifier {
 	        if (fileEntry.isDirectory()) {
 	            listFilesForFolder(gender, fileEntry);
 	        } else {
-	            String result =  readFile(gender, fileEntry.getName());
+	            String result =  readFile("blogstrain", gender, fileEntry.getName());
 	            if(gender =="F") addList(fWords, result);
 	            else addList(mWords, result);	            
 	        }
@@ -44,9 +46,9 @@ public class NaiveBayesianTextClassifier {
 	    return "";
 	}
 	 
-		String readFile(String gender, String fileName){
+		String readFile(String train, String gender, String fileName){
 			 String everything = "";
-			 try(BufferedReader br = new BufferedReader(new FileReader("C:/Users/reinard/Documents/TI/Jaar 2/Module 6/blogstest/" + gender + "/"  + fileName))) {
+			 try(BufferedReader br = new BufferedReader(new FileReader("C:/Users/reinard/Documents/TI/Jaar 2/Module 6/"+ train +"/" + gender + "/"  + fileName))) {
 			        StringBuilder sb = new StringBuilder();
 			        String line = br.readLine();
 
@@ -147,12 +149,17 @@ public class NaiveBayesianTextClassifier {
 
 	 }
 	  
-		 String listFilesForFolder2(String gender, final File folder) {
+		 String listFilesForFolder2(String train, String gender, final File folder) {
 			    for (final File fileEntry : folder.listFiles()) {
 			        if (fileEntry.isDirectory()) {
 			            listFilesForFolder(gender, fileEntry);
 			        } else {
-			            String result =  readFile(gender, fileEntry.getName());  
+			            String result =  readFile(train, gender, fileEntry.getName());  
+			            if((gender ==  "M" && run(result) == "MALE") || (gender ==  "F" && run(result) == "FEMALE")){
+			            	correct++;
+			            } else {
+			            	notCorrect++;
+			            }
 			            System.out.println(fileEntry.getName());
 						System.out.println(run(result));
 
@@ -160,14 +167,17 @@ public class NaiveBayesianTextClassifier {
 			    }
 			    return "";
 			}
-//			
-//	public static void main(String[] args) {
-//		
-//		
-//		NaiveBayesianTextClassifier t = new NaiveBayesianTextClassifier();
-//		final File mFolder = new File("C:/Users/reinard/Documents/TI/Jaar 2/Module 6/blogstest/M");
-//		t.listFilesForFolder2("M", mFolder);
-//		final File fFolder = new File("C:/Users/reinard/Documents/TI/Jaar 2/Module 6/blogstest/F/");
-//		t.listFilesForFolder2("F", fFolder);
-//	}
+			
+	public static void main(String[] args) {
+		
+		
+		NaiveBayesianTextClassifier t = new NaiveBayesianTextClassifier();
+		final File mFolder = new File("C:/Users/reinard/Documents/TI/Jaar 2/Module 6/blogstest/M");
+		t.listFilesForFolder2("blogstest", "M", mFolder);
+		final File fFolder = new File("C:/Users/reinard/Documents/TI/Jaar 2/Module 6/blogstest/F/");
+		t.listFilesForFolder2("blogstest", "F", fFolder);
+		System.out.println(t.correct);
+		System.out.println(t.notCorrect);
+		System.out.println((double)(t.correct/(t.correct + t.notCorrect)));
+	}
 }
